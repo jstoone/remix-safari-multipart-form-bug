@@ -48,6 +48,7 @@ export default function NewNotePage() {
   return (
     <Form
       method="post"
+      encType="multipart/form-data"
       style={{
         display: "flex",
         flexDirection: "column",
@@ -61,6 +62,27 @@ export default function NewNotePage() {
           <input
             ref={titleRef}
             name="title"
+            className="flex-1 rounded-md border-2 border-blue-500 px-3 text-lg leading-loose"
+            aria-invalid={actionData?.errors?.title ? true : undefined}
+            aria-errormessage={
+              actionData?.errors?.title ? "title-error" : undefined
+            }
+          />
+        </label>
+        {actionData?.errors?.title && (
+          <div className="pt-1 text-red-700" id="title-error">
+            {actionData.errors.title}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <label className="flex w-full flex-col gap-1">
+          <span>File: </span>
+          <input
+            ref={titleRef}
+            type="file"
+            name="file"
             className="flex-1 rounded-md border-2 border-blue-500 px-3 text-lg leading-loose"
             aria-invalid={actionData?.errors?.title ? true : undefined}
             aria-errormessage={
