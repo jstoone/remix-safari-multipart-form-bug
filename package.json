@@ -50,6 +50,7 @@
     "@testing-library/user-event": "^14.4.3",
     "@types/bcryptjs": "^2.4.2",
     "@types/eslint": "^8.37.0",
+    "@types/fluent-ffmpeg": "^2.1.21",
     "@types/node": "^18.15.11",
     "@types/react": "^18.0.37",
     "@types/react-dom": "^18.0.11",
