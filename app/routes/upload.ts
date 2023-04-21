@@ -1,7 +1,13 @@
 import { json, ActionArgs, ActionFunction } from "@remix-run/node";
 
+import ffmpeg from "fluent-ffmpeg";
+import { Readable } from "stream";
+import { requireUser } from "~/session.server";
 
 export const action: ActionFunction = async ({ request }: ActionArgs) => {
+  const user = await requireUser(request);
+
+  console.log('verify that user is here', user);
 
   if (!request.body) {
     return new Response("No file uploaded.", { status: 400 });
@@ -10,27 +16,40 @@ export const action: ActionFunction = async ({ request }: ActionArgs) => {
   try {
     const reader = request.body.getReader();
 
-    let receivedLength = 0;
+    const inputStream = new Readable({
+      async read() {
+        const { done, value } = await reader.read();
 
-    while (true) {
-      const { done, value } = await reader.read();
+        if (done) {
+          this.push(null);
+        } else {
+          this.push(value);
+        }
+      },
+    });
 
-      if (done) {
-        break;
-      }
+    // Set up ffmpeg to process the input stream
+    const processing = new Promise((resolve, reject) => {
+      ffmpeg(inputStream)
+        .format("mp3")
+        .audioBitrate("128k")
+        .on("error", (err: Error) => {
+          console.error("An error occurred while processing the file:", err);
+          reject(err);
+        })
+        .on("end", () => {
+          console.log("File processed successfully.");
+          resolve(null);
+        })
+        .save(process.cwd() + "/output.mp3");
+    });
 
-      // Process the chunk
-      console.log("Received chunk", value);
+    await processing;
 
-      receivedLength += value.length;
-    }
-
-    console.log("Received file size:", receivedLength);
-
-    return json({ message: "File uploaded successfully." });
+    return json({ message: "File uploaded and processed successfully." });
   } catch (error) {
-    return new Response("An error occurred while uploading the file.", {
+    return new Response("An error occurred while uploading and processing the file.", {
       status: 500,
     });
   }
-}
+};
