@@ -1,6 +1,6 @@
 import { json, redirect, ActionArgs } from "@remix-run/node";
 import { Form, useActionData } from "@remix-run/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { createNote } from "~/models/note.server";
 import { requireUserId } from "~/session.server";
@@ -36,6 +36,7 @@ export default function NewNotePage() {
   const actionData = useActionData<typeof action>();
   const titleRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const [fileUploadError, setFileUploadError] = useState<string | null>(null)
 
   useEffect(() => {
     if (actionData?.errors?.title) {
@@ -44,6 +45,38 @@ export default function NewNotePage() {
       bodyRef.current?.focus();
     }
   }, [actionData]);
+
+  function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    if (!event.target.files || event.target.files.length === 0) {
+      return;
+    }
+
+    const file = event.target.files[0];
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/upload", true);
+    xhr.setRequestHeader("Content-Type", "application/octet-stream");
+    xhr.setRequestHeader(
+      "Content-Disposition",
+      `attachment; filename=${file.name}`
+    );
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 400) {
+        setFileUploadError(null);
+      } else {
+        setFileUploadError("An error occurred while uploading the file.");
+      }
+    };
+
+    xhr.onerror = () => {
+      setFileUploadError("An error occurred while uploading the file.");
+    };
+
+    xhr.send(file);
+  }
+
+
+
 
   return (
     <Form
@@ -71,6 +104,26 @@ export default function NewNotePage() {
         {actionData?.errors?.title && (
           <div className="pt-1 text-red-700" id="title-error">
             {actionData.errors.title}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <label className="flex w-full flex-col gap-1">
+          <span>File: </span>
+          <input
+            ref={titleRef}
+            type="file"
+            name="file"
+            className="flex-1 rounded-md border-2 border-blue-500 px-3 text-lg leading-loose"
+            onChange={handleFileUpload}
+            aria-invalid={fileUploadError ? true : undefined}
+            aria-errormessage={fileUploadError ? "file-error" : undefined}
+          />
+        </label>
+        {fileUploadError && (
+          <div className="pt-1 text-red-700" id="file-error">
+            {fileUploadError}
           </div>
         )}
       </div>
